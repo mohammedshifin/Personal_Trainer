@@ -4,11 +4,10 @@ from dotenv import load_dotenv
 import os
 load_dotenv()
 
-api_key = os.getenv("GOOGLE_API_KEY") 
+api_key = os.getenv("GOOGLE_API_KEY")
 
 # App configuration
 st.set_page_config(page_title="Fitness AI Coach", page_icon="💪")
-
 
 def main():
     st.title("💬 Fitness Chat Assistant")
@@ -59,20 +58,20 @@ def main():
         with st.spinner("Thinking..."):
             try:
                 if "tip" in prompt.lower():
-                    response = st.session_state.chains["tip"].run(
-                        {"fitness_level": fitness_level}
-                    )
+                    response = st.session_state.chains["tip"]({"fitness_level": fitness_level})
                 elif "workout" in prompt.lower():
-                    response = st.session_state.chains["workout"].run({
+                    response = st.session_state.chains["workout"]({
                         "duration": 30,
                         "fitness_level": fitness_level,
                         "workout_focus": "full-body",
                         "equipment": "bodyweight"
                     })
                 else:
-                    response = st.session_state.chains["general"].run({
-                        "input": prompt
-                    })
+                    response = st.session_state.chains["general"]({"input": prompt})
+                
+                # Extract the content from the response
+                if hasattr(response, 'content'):
+                    response = response.content
             except Exception as e:
                 response = f"Error generating response: {e}"
 

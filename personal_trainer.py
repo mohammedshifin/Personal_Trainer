@@ -1,13 +1,11 @@
-#import streamlit as st
 from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
 from langchain.memory import ConversationBufferMemory
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 def initialize_llm(api_key):
     return ChatGoogleGenerativeAI(
-        model="gemini-pro",
-        google_api_key =api_key,
+        model="gemini-2.0-flash-exp",
+        google_api_key=api_key,
         temperature=0.7
     )
 
@@ -33,10 +31,15 @@ def create_prompt_templates():
 
 def setup_chains(llm):
     templates = create_prompt_templates()
-    memory = ConversationBufferMemory(memory_key="history")
-    return{
-        "workout" : llm | templates['workout'],
-        "tip" : llm | templates['tip'],
-        "general" : llm | templates['general'] 
+    # Updated memory implementation
+    memory = ConversationBufferMemory(return_messages=True)
+    
+    # Create chains using the newer approach
+    return {
+        "workout": lambda params: llm.invoke(templates["workout"].format(**params)),
+        "tip": lambda params: llm.invoke(templates["tip"].format(**params)),
+        "general": lambda params: llm.invoke(templates["general"].format(
+            input=params["input"], 
+            history=memory.load_memory_variables({})["history"]
+        ))
     }
-
