@@ -1,6 +1,7 @@
 from langchain.prompts import PromptTemplate
-from langchain.memory import ConversationBufferMemory
+from langchain.memory import ConversationBufferMemory ,ConversationSummaryBufferMemory
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.output_parsers import StrOutputParser
 
 def initialize_llm(api_key):
     return ChatGoogleGenerativeAI(
@@ -31,12 +32,15 @@ def create_prompt_templates():
 
 def setup_chains(llm):
     templates = create_prompt_templates()
-    memory = ConversationBufferMemory(return_messages=True)
+    memory = ConversationSummaryBufferMemory(llm=llm, max_token_limit=2000)
+    workout_chain = templates["workout"] | llm | StrOutputParser()
+    tip_chain = templates["tip"] | llm | StrOutputParser()
+    general_chain = (templates["general"].partial(history=memory.load_memory_variables({})["history"])
+                     | llm | StrOutputParser())
+
     return {
-        "workout": lambda params: llm.invoke(templates["workout"].format(**params)),
-        "tip": lambda params: llm.invoke(templates["tip"].format(**params)),
-        "general": lambda params: llm.invoke(templates["general"].format(
-            input=params["input"], 
-            history=memory.load_memory_variables({})["history"]
-        ))
+        "workout": lambda params: workout_chain.invoke(params),
+        "tip": lambda params: tip_chain.invoke(params),
+        "general": lambda params: general_chain.invoke({"input": params["input"]}),
+        "memory": memory
     }

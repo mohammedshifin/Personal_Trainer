@@ -2,18 +2,23 @@ import streamlit as st
 from personal_trainer import initialize_llm, setup_chains
 from dotenv import load_dotenv
 import os
+from PIL import Image
 load_dotenv()
 
 api_key = os.getenv("GOOGLE_API_KEY")
 
-# App configuration
-st.set_page_config(page_title="Fitness AI Coach", page_icon="💪")
-
 def main():
+    st.set_page_config(page_title="Fitness AI Coach", page_icon="💪")
     st.title("💬 Fitness Chat Assistant")
     st.caption("Your personal AI fitness coach powered by Gemini")
+    
+    uploaded_file = st.file_uploader("Choose an image...",type=["jpg", "jpeg", "png"])
+    if uploaded_file is not None:
+        image = Image.open(uploaded_file)
+        st.image(image=image,caption="Uploaded Image.",use_column_width=True) 
+        st.write("")
+        st.write("Classifying")
 
-    # Initialize session state
     if "messages" not in st.session_state:
         st.session_state.messages = []
     if "llm_initialized" not in st.session_state:
@@ -39,7 +44,6 @@ def main():
             else:
                 st.error("Please enter an API key")
 
-    # Chat interface
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
@@ -49,12 +53,9 @@ def main():
             st.error("Please initialize the chatbot in the sidebar first")
             return
 
-        # Add user message to history
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
-
-        # Generate response
         with st.spinner("Thinking..."):
             try:
                 if "tip" in prompt.lower():
@@ -69,13 +70,13 @@ def main():
                 else:
                     response = st.session_state.chains["general"]({"input": prompt})
                 
-                # Extract the content from the response
                 if hasattr(response, 'content'):
                     response = response.content
+                st.session_state.chains["memory"].save_context({"input": prompt}, {"output": response})
+
             except Exception as e:
                 response = f"Error generating response: {e}"
 
-        # Display assistant response
         with st.chat_message("assistant"):
             st.markdown(response)
         st.session_state.messages.append({"role": "assistant", "content": response})
