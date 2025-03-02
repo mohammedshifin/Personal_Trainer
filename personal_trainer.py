@@ -31,10 +31,7 @@ def create_prompt_templates():
 
 def setup_chains(llm):
     templates = create_prompt_templates()
-    # Updated memory implementation
     memory = ConversationBufferMemory(return_messages=True)
-    
-    # Create chains using the newer approach
     return {
         "workout": lambda params: llm.invoke(templates["workout"].format(**params)),
         "tip": lambda params: llm.invoke(templates["tip"].format(**params)),
