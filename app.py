@@ -26,7 +26,6 @@ def main():
 
     with st.sidebar:
         st.header("Settings")
-        
         fitness_level = st.selectbox(
             "Your Fitness Level",
             ["Beginner", "Intermediate", "Advanced"]
